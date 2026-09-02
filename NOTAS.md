@@ -44,6 +44,25 @@ Escrever e executar `02_load.sql`, carregando as 6 tabelas via LOAD DATA LOCAL I
 ### Verificação de carga
 Contagem MySQL (`COUNT(*)`) conferida contra CSV original para as 6 tabelas — todas batendo. Nota lateral: contar linhas no Bloco de Notas superestima o total quando há comentários com quebra de linha interna; Excel e MySQL contam linha lógica (1 registro = 1 linha, aspas protegem quebras internas). Usar sempre COUNT(*) do MySQL ou contagem lógica do Excel como fonte de verdade, nunca contagem de linhas físicas de editor de texto.
 
+### Aprendizados
+Linha `null` no final da tabela é uma *linha de inserção de novos dados **(linha fantasma)***. Simbolizada pelo *.
+#### Commits 
+1. **Tipos Principais de Commits:**
+- *feat*: Adiciona um novo recurso ao código.
+- *fix*: Corrige um erro ou bug.
+- *docs*: Altera apenas a documentação.
+- *style*: Muda a estilização ou formatação do código, sem alterar a lógica.
+- *refactor*: Refatora o código sem criar novas funções ou corrigir bugs.
+- *test:* Cria ou altera testes.
+- *chore:* Atualiza tarefas de build, pacotes ou configurações que não afetam o sistema principal.
+2. **Usar Imperativo**
+- Separe commits diferentes.
+- Modo imperativo na descrição.
+- Escreva a primeira letra da descrição em minúscula.
+- Não coloque ponto final no final da primeira linha.
+- Mantenha o título com no máximo 50 a 72 caracteres.
+
+
 ### Pendente pro Dia 3
 Checar `review_id` duplicados em `order_reviews` (nota do escopo do projeto, ainda não verificado contra dado real) via GROUP BY + HAVING COUNT(*) > 1.
 
