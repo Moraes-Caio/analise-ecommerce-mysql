@@ -62,8 +62,38 @@ Linha `null` no final da tabela é uma *linha de inserção de novos dados **(li
 - Não coloque ponto final no final da primeira linha.
 - Mantenha o título com no máximo 50 a 72 caracteres.
 
-
 ### Pendente pro Dia 3
 Checar `review_id` duplicados em `order_reviews` (nota do escopo do projeto, ainda não verificado contra dado real) via GROUP BY + HAVING COUNT(*) > 1.
 
 **Status:** `02_load.sql` completo - 6 tabelas com dados carregados (a partir dos csv's) e conferidos.
+
+
+## Dia 3 — 02/09
+
+### Objetivo
+Escrever e executar `03_qualidade.sql` com 4 checagens de qualidade: valores nulos, pedidos órfãos, review_id duplicado, datas inconsistentes.
+
+### Decisões técnicas
+- PK nunca entra no check de nulo — constraint já garante NOT NULL.
+- FK sem proteção de PK entra em DOIS checks: nulo e órfão.
+- `products.product_category_name -> product_category_name_translation.product_category_name` não tem FK formal no schema, mas foi checado como órfão mesmo assim.
+- `IS NULL` não pega string vazia (`''`) — são coisas diferentes pro MySQL. Colunas de texto opcionais sem `NULLIF` no load podem esconder `''` que o check de nulo não detecta. Corrigido adicionando `NULLIF(@var, '')` no `02_load.sql` para `product_category_name` (products) e `customer_city`/`customer_state` (customers).
+
+### Achados sobre a qualidade do dado
+- Nulos: 0 em quase todas as colunas obrigatórias verificadas. Exceção: `product_weight_g`, `product_length_cm`, `product_height_cm`, `product_width_cm` — 2 NULL cada, em `products`.
+- Nulos disfarçados de string vazia: `product_category_name` tinha 610 linhas com `''` (não pegas pelo `IS NULL` original). Após fix no load, viram NULL de verdade — `customer_city`, `customer_state`, `order_status` checados com `= ''` e confirmados em 0.
+- Órfãos: 0 em 4 das 5 relações verificadas (customer_id, order_items.order_id, order_items.product_id, order_reviews.order_id). Exceção: `products.product_category_name` sem FK correspondente — 623 produtos afetados no total; 610 por categoria NULL (já contados acima) e 13 por categorias reais sem FK correspondente. Categorias: `pc_gamer` e `portateis_cozinha_e_preparadores_de_alimentos`.
+- Duplicatas: 789 `review_id` distintos aparecem mais de uma vez em `order_reviews`, somando 1603 linhas envolvidas no total.
+- Datas inconsistentes: 1382 pedidos com pelo menos uma violação de ordem cronológica entre as 4 datas de `orders` - 2980 pedidos ficam fora dessa análise por terem ao menos uma das 4 datas NULL. Soma das 3 verificações em etapas (166+1359+23=1548) > total unificado (1382) — confirma que existem linhas com mais de uma data inconsistente ao mesmo tempo, contadas 2x no `OR` separada e só 1x no `OR` unificado.
+
+### Aprendizados
+- `LEFT JOIN` + `WHERE tabela_pai.coluna IS NULL` é o padrão pra achar órfão.
+- `HAVING` só filtra depois de `GROUP BY`. Sem `GROUP BY`, `HAVING COUNT(*)` trata a tabela inteira como um grupo só e não filtra nada útil.
+- Subquery usada como tabela (dentro de `FROM (...)`) exige alias.
+- `IS NULL` e `= ''` são checagens diferentes — sempre rodar as duas em coluna de texto opcional, mesmo que uma já tenha dado 0.
+
+
+### Pendente pro Dia 4
+Nenhuma pendência do check 3 em aberto.
+
+**Status:** `03_qualidade.sql` completo — 4 checagens executadas e validadas contra o dado real. `02_load.sql` corrigido e reconferido após achado de string vazia disfarçada de NULL.
